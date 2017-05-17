@@ -103,7 +103,7 @@ fn is_prime_mr(mut n: u64, mut tests_per_core: u64) -> bool {
     let mut rng = rand::thread_rng();
     let range = Range::new(3, n - 1);
     let mut random_number = 3;
-    let mut random_numbers: HashSet<u64> = vec!().into_iter().collect();
+    let mut random_numbers: HashSet<u64> = HashSet::new();
     for _ in 0..(tests_per_core * (num_cpu as u64)) {
         while random_numbers.contains(&random_number) {
             //håll koll på ampersandet
