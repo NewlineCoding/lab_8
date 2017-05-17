@@ -87,9 +87,7 @@ fn is_composite_witness(a: u64, n: u64, t: u64, u: u64) -> bool {
 }
 
 fn is_prime_mr(mut n: u64, mut tests_per_core: u64) -> bool {
-    print!("isprimerunning");
     let num_cpu = num_cpus::get();
-    print!("num cpus {}", num_cpu);
     let (tx, rx) = channel();
     let mut workers = ThreadPool::new_with_name("worker".into(), num_cpu);
     assert! (tests_per_core != 0 && n != 2 && n != 3);
@@ -105,7 +103,7 @@ fn is_prime_mr(mut n: u64, mut tests_per_core: u64) -> bool {
     let mut rng = rand::thread_rng();
     let range = Range::new(3, n - 1);
     let mut random_number = 3;
-    let mut random_numbers: HashSet<u64> = vec!(0).into_iter().collect();
+    let mut random_numbers: HashSet<u64> = vec!().into_iter().collect();
     for _ in 0..(tests_per_core * (num_cpu as u64)) {
         while random_numbers.contains(&random_number) {
             //håll koll på ampersandet
@@ -134,5 +132,8 @@ fn main() {
         if is_prime_mr(i, 3) {
         print ! ("\n{} is prime MR\n", i)
         }
+        if is_prime_naive(i) {
+        print ! ("\n{} is prime naive\n", i)
+    }
     }
 }
