@@ -128,12 +128,9 @@ fn is_prime_mr(mut n: u64, mut tests_per_core: u64) -> bool {
 }
 
 fn main() {
-    for i in 100..1000 {
+    for i in 1000..1000000 {
         if is_prime_mr(i, 3) {
         print ! ("\n{} is prime MR\n", i)
         }
-        if is_prime_naive(i) {
-        print ! ("\n{} is prime naive\n", i)
-    }
     }
 }
