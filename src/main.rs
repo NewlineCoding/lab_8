@@ -11,18 +11,6 @@ use std::sync::mpsc::channel;
 // elsewhere: let num = num_cpus::get();
 
 
-fn gcd(mut n: u64, mut m: u64) -> u64 {
-    assert!(n != 0 && m != 0);
-    while m != 0 {
-        if m < n {
-            let t = m;
-            m = n;
-            n = t;
-        }
-        m = m % n;
-    }
-    n
-}
 
 fn is_prime_naive(mut n: u64) -> bool {
     assert!(n != 0);
@@ -86,7 +74,7 @@ fn is_composite_witness(a: u64, n: u64, t: u64, u: u64) -> bool {
     true
 }
 
-fn is_prime_mr(mut n: u64, mut tests_per_core: u64) -> bool {
+fn is_prime_mr_multi_core(mut n: u64, mut tests_per_core: u64) -> bool {
     let num_cpu = num_cpus::get();
     let (tx, rx) = channel();
     let mut workers = ThreadPool::new_with_name("worker".into(), num_cpu);
@@ -127,10 +115,48 @@ fn is_prime_mr(mut n: u64, mut tests_per_core: u64) -> bool {
     true
 }
 
-fn main() {
-    for i in 1000..1000000 {
-        if is_prime_mr(i, 3) {
-        print ! ("\n{} is prime MR\n", i)
+
+fn is_prime_mr_single_core(mut n: u64, mut tests_per_core: u64) -> bool {
+    let num_cpu = num_cpus::get();
+    assert! (tests_per_core != 0 && n != 2 && n != 3);
+    if tests_per_core > (n - 2) {
+        tests_per_core = n - 2
+    }
+    if n % 2 == 0 {
+        return false
+    }
+    let tu_tuple = tu_finder(n);
+    let mut t: u64 = tu_tuple.0;
+    let mut u: u64 = tu_tuple.1;
+    let mut rng = rand::thread_rng();
+    let range = Range::new(3, n - 1);
+    let mut random_number = 3;
+    let mut random_numbers: HashSet<u64> = HashSet::new();
+    for i in 1..tests_per_core{
+        while random_numbers.contains(&random_number) {
+            random_number = range.ind_sample(&mut rng);
         }
+        random_numbers.insert(random_number);
+    }
+    for rn in random_numbers {
+        if is_composite_witness(rn, n, t, u) {
+            return false
+        }
+    }
+    true
+}
+
+
+fn main() {
+//    for i in 1000000000..1000101001 {
+//        if is_prime_mr_multi_core(i, 1) {
+//            print!("\n{} is prime MR mc\n", i)
+//        }
+//   }
+
+    for i in 1000000000..1000101001 {
+        if is_prime_mr_single_core(i, 4) {
+           print!("\n{} is prime MR sc\n", i)
+           }
     }
 }
