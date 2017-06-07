@@ -33,7 +33,7 @@ fn modular_exp(mut a: u64, mut b: u64, mut c: u64) -> u64 {
     //print!("\n{}\n", b_in_bin);
     //let b_in_bin_c = &b_in_bin[2..];
     let mut a_pow_b_mod_c = 1;
-    //a = a % c;
+    a = a % c;
     let len = b_in_bin.chars().count();
     for i in 0..len {
         if i > 0 {
@@ -90,16 +90,25 @@ fn is_prime_mr_multi_core(mut n: u64, mut tests_per_core: u64) -> bool {
     let tu_tuple = tu_finder(n);
     let mut t: u64 = tu_tuple.0;
     let mut u: u64 = tu_tuple.1;
-    let witnesses: [u64; 13] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41];
-    let len_witnesses = witnesses.len();
-    for i in 0..len_witnesses {
+    let mut rng = rand::thread_rng();
+    let range = Range::new(3, n - 1);
+    let mut random_number = 3;
+    let mut random_numbers: HashSet<u64> = HashSet::new();
+    for _ in 0..(tests_per_core * (num_cpu as u64)) {
+        while random_numbers.contains(&random_number) {
+            //håll koll på ampersandet
+            random_number = range.ind_sample(&mut rng);
+        }
+        random_numbers.insert(random_number);
+    }
+    for i in random_numbers {
         let tx = tx.clone();
         workers.execute(move || {
-            tx.send(is_composite_witness(witnesses[i], n, t, u)).unwrap();
+            tx.send(is_composite_witness(i, n, t, u)).unwrap();
         });
     }
-    let mut bools: Vec<bool> = Vec::with_capacity((len_witnesses) as usize);
-    for _ in 0..(len_witnesses) {
+    let mut bools: Vec<bool> = Vec::with_capacity((tests_per_core * (num_cpu as u64)) as usize);
+    for _ in 0..(tests_per_core * (num_cpu as u64)) {
         bools.push(rx.recv().unwrap_or(false));
     }
     if bools.contains(&true){
@@ -121,10 +130,18 @@ fn is_prime_mr_single_core(mut n: u64, mut tests_per_core: u64) -> bool {
     let tu_tuple = tu_finder(n);
     let mut t: u64 = tu_tuple.0;
     let mut u: u64 = tu_tuple.1;
-    let witnesses: [u64; 13] = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41];
-    let len_witnesses = witnesses.len();
-    for i in 0..len_witnesses {
-        if is_composite_witness(witnesses[i], n, t, u) {
+    let mut rng = rand::thread_rng();
+    let range = Range::new(3, n - 1);
+    let mut random_number = 3;
+    let mut random_numbers: HashSet<u64> = HashSet::new();
+    for i in 1..tests_per_core{
+        while random_numbers.contains(&random_number) {
+            random_number = range.ind_sample(&mut rng);
+        }
+        random_numbers.insert(random_number);
+    }
+    for rn in random_numbers {
+        if is_composite_witness(rn, n, t, u) {
             return false
         }
     }
@@ -134,8 +151,8 @@ fn is_prime_mr_single_core(mut n: u64, mut tests_per_core: u64) -> bool {
 
 fn main() {
     print!("{}", MAX);
-    let not_quite_max: u64 = 4294967296;
-    let not_quite_not_quite_max: u64 = 4294900000;
+    let not_quite_max: u64 = 1000000;
+    let not_quite_not_quite_max: u64 = 10;
     let beg1 = Instant::now();
     for i in not_quite_not_quite_max..not_quite_max  {
         if is_prime_mr_multi_core(i, 1) {
